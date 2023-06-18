@@ -9,6 +9,7 @@ add wave -noupdate -format Logic /tb_calc_ctrl/dig3_o
 add wave -noupdate -format Logic /tb_calc_ctrl/led_o
 add wave -noupdate -format Logic /tb_calc_ctrl/swsync_i
 add wave -noupdate -format Logic /tb_calc_ctrl/pbsync_i
+add wave -noupdate -format Logic /tb_calc_ctrl/start_o
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {0 ps}
 WaveRestoreZoom {0 ps} {1 ns}

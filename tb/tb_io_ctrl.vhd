@@ -69,15 +69,15 @@ begin
     CLK_p : process                     -- 100 Mhz
         begin
             clk_i <= '0';
-            wait for 5 ns;
+            wait for 5 us;
             clk_i <= '1';
-            wait for 5 ns;
+            wait for 5 us;
     end process;
 
     R_p : process
         begin
             reset_i <= '1';
-            wait for 15 ns;
+            wait for 15 us;
             reset_i <= '0';
             wait;
     end process;
@@ -85,20 +85,13 @@ begin
     PB_p :  process
         begin
             pb_i(0) <= '1';
-            wait for 10 ns;
-            pb_i(0) <= '0';
+            wait;
+           -- pb_i(1) <= '1';
 
-            pb_i(1) <= '1';
-            wait for 10 ns;
-            pb_i(1) <= '0';
+           -- pb_i(2) <= '1';
 
-            pb_i(2) <= '1';
-            wait for 10 ns;
-            pb_i(2) <= '0';
+           -- pb_i(3) <= '1';
 
-            pb_i(3) <= '1';
-            wait for 10 ns;
-            pb_i(3) <= '0';
     end process;
 
     SS_p : process
@@ -107,6 +100,9 @@ begin
             dig1_i <= "01100000";
             dig2_i <= "11011010";
             dig3_i <= "11110010";
+
+            sw_i  <= "0000000000001011";
+            led_i <= "1000000000000000";
             wait;
     end process;
 end sim;

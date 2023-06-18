@@ -43,20 +43,15 @@ end io_ctrl;
 architecture rtl of io_ctrl is
 
     constant ENCOUNTVAL : integer:= 100000;
-    constant C_ENCOUNTVAL : std_logic_vector(16 downto 0):= "11000011010100000";
-
-
-    signal s_tick : std_logic_vector(16 downto 0);
 
     signal s_enctr  : integer := 0;
     signal s_1khzen : std_logic;
-    signal swsync   : std_logic_vector(15 downto 0);
     signal pbsync   : std_logic_vector(3 downto 0);
+    signal swsync   : std_logic_vector(15 downto 0);
     signal s_ss_sel : std_logic_vector(3 downto 0);
     signal s_ss     : std_logic_vector(7 downto 0);
 
 begin
-
     -------------------------------------
     -- Generate 1 kHz enable signal
     -------------------------------------
@@ -64,7 +59,8 @@ begin
     begin
         if reset_i = '1' then
             s_1khzen <= '0';
-            s_enctr <= 0;
+            s_enctr  <= 0;
+
         elsif clk_i'event and clk_i = '1' then
             if s_enctr = ENCOUNTVAL then
                 s_1khzen <= '1';
@@ -72,6 +68,7 @@ begin
             else
                 s_enctr <= s_enctr + 1;
                 s_1khzen <= '0';
+
             end if;
         end if;
     end process p_slowen;
@@ -82,72 +79,55 @@ begin
     p_debounce: process (clk_i, reset_i)
     begin
         if reset_i = '1' then
-            s_tick <= "00000000000000000";
+            pbsync <= (others => '0');
+            swsync <= (others => '0');
+
         elsif clk_i'event and clk_i = '1' then
-            if pb_i(0) = '1' then                                               -- if button pushed counter starts
-                s_tick <= std_logic_vector(unsigned(s_tick)+1);
-                if s_tick = C_ENCOUNTVAL and pb_i(0) = '1' then                  -- if button is still pushed safe input signal
-                    pbsync(0) <= pb_i(0);
-                    s_tick <= "00000000000000000";
-                elsif s_tick = C_ENCOUNTVAL and pb_i(0) = '0' then               -- if not reset counter
-                    s_tick <= "00000000000000000";
-                end if;
-                    
-            elsif pb_i(1) = '1' then
-                s_tick <= std_logic_vector(unsigned(s_tick)+1);
-                if s_tick = C_ENCOUNTVAL and pb_i(1) = '1' then
-                    pbsync(1) <= pb_i(1);
-                    s_tick <= "00000000000000000";
-                elsif s_tick = C_ENCOUNTVAL and pb_i(1) = '0' then
-                    s_tick <= "00000000000000000";
-                end if;
-
-            elsif pb_i(2) = '1' then
-                s_tick <= std_logic_vector(unsigned(s_tick)+1);
-                if s_tick = C_ENCOUNTVAL and pb_i(2) = '1' then
-                    pbsync(2) <= pb_i(2);
-                    s_tick <= "00000000000000000";
-                elsif s_tick = C_ENCOUNTVAL and pb_i(2) = '0' then
-                    s_tick <= "00000000000000000";
-                end if;
-
-            elsif pb_i(3) = '1' then
-                s_tick <= std_logic_vector(unsigned(s_tick)+1);
-                if s_tick = C_ENCOUNTVAL and pb_i(3) = '1' then
-                    pbsync(3) <= pb_i(3);
-                    s_tick <= "00000000000000000";
-                elsif s_tick = C_ENCOUNTVAL and pb_i(3) = '0' then
-                    s_tick <= "00000000000000000";
-                end if;
-
+            if s_1khzen = '1' then
+                swsync <= sw_i;
+                pbsync <= pb_i;
+                
             end if;
+
         end if;
     end process p_debounce; 
-
-    swsync_o <= swsync;
+    swsync_o <= sw_i;
     pbsync_o <= pbsync;
             
     ------------------------------------------------
     -- Display controller for the 7-segment display
     ------------------------------------------------
-    p_display_ctrl: process (s_1khzen, reset_i)
+    p_display_ctrl: process (clk_i, reset_i)
     begin
         if reset_i = '1' then
-            s_ss_sel <= "0000";
-            elsif s_1khzen'event and s_1khzen = '1' then
-                if s_ss_sel = "0000" then
-                    s_ss <= dig0_i;
-                    s_ss_sel <= "0010";
-                elsif s_ss_sel = "0010" then
-                    s_ss <= dig1_i;
-                    s_ss_sel <= "0011";
-                elsif s_ss_sel = "0011" then
-                    s_ss <= dig2_i;
-                    s_ss_sel <= "0100";
-                elsif s_ss_sel = "0100" then
-                    s_ss <= dig3_i;
-                    s_ss_sel <= "0000";
-                end if;                
+            s_ss_sel <= "1110";
+            s_ss <= (others => '0');
+
+        elsif clk_i'event and clk_i = '1' then
+            if s_1khzen = '1' then 
+                case s_ss_sel  is
+                
+                    when "1110" =>
+                        s_ss <= dig1_i;
+                        s_ss_sel <= "1101";
+
+                    when "1101" =>
+                        s_ss <= dig2_i;
+                        s_ss_sel <= "1011";
+
+                    when "1011" =>
+                        s_ss <= dig3_i;
+                        s_ss_sel <= "0111";
+
+                    when "0111" =>
+                        s_ss <= dig0_i;
+                        s_ss_sel <= "1110";
+                    
+                    when others =>
+                        s_ss_sel <= "1110";
+
+                end case ;  
+            end if;
         end if;
     end process p_display_ctrl;
 
@@ -160,7 +140,3 @@ begin
     led_o <= led_i;
 
 end rtl;
-
-    
-        
-

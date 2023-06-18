@@ -83,45 +83,49 @@ begin
     CLK_p : process                     -- 100 Mhz
         begin
             clk_i <= '0';
-            wait for 5 ns;
+            wait for 5 us;
             clk_i <= '1';
-            wait for 5 ns;
+            wait for 5 us;
     end process;
     
     R_p : process
         begin
             reset_i <= '1';
-            wait for 15 ns;
+            wait for 15 us;
             reset_i <= '0';
             wait;
     end process;
 
     FSM_p : process
         begin
-            wait for 20 ns;
             pbsync_i <= (others => '0');
 
             pbsync_i(BTNL) <= '1';
-            wait for 1 us;
+            wait for 2 ms;
             pbsync_i(BTNL) <= '0';
-            wait for 50 ns;
+            wait for 1 us;
 
             pbsync_i(BTNC) <= '1';
-            wait for 1 us;
+            wait for 2 ms;
             pbsync_i(BTNC) <= '0';
-            wait for 50 ns;
+            wait for 1 us;
 
             pbsync_i(BTNR) <= '1';
-            wait for 1 us;
+            wait for 2 ms;
             pbsync_i(BTNR) <= '0';
-            wait for 50 ns;
+            wait for 1 us;
+
+            pbsync_i(BTND) <= '1';
+            wait for 2 ms;
+            pbsync_i(BTND) <= '0';
+            wait for 1 us;
 
     end process;
 
     SW_P : process
         begin
             swsync_i(11 downto 0)  <= "000000001111";      -- F 
-            swsync_i(15 downto 12) <= "1000"; -- NOT
+            swsync_i(15 downto 12) <= "0010"; -- NOT
             wait;
     end process;
 

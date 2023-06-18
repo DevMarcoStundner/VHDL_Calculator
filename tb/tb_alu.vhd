@@ -69,30 +69,35 @@ begin
     CLK_p : process                     -- 100 Mhz
     begin
         clk_i <= '0';
-        wait for 5 ns;
+        wait for 5 us;
         clk_i <= '1';
-        wait for 5 ns;
+        wait for 5 us;
     end process;
     
     R_p : process
         begin
             reset_i <= '1';
-            wait for 15 ns;
+            wait for 15 us;
             reset_i <= '0';
+            wait for 5 ms;
+            reset_i <= '1', '0' after 15 us;
             wait;
+
     end process;
 
     optyp_p : process
     begin
-        op1_i <= "111111111111";
-        op2_i <= "111111111111";
+        optyp_i <= "0010";
+        wait for 50 us;
+
+        op1_i <= "000011111111";
+        op2_i <= "000011111111";
+
 
          -- optyp_i <= "0000";
         -- wait for 50 ns;
 
-        optyp_i <= "0010";
-        wait for 50 ns;
-
+        
         --optyp_i <= "1000";
         --wait for 50 ns;
 
@@ -104,10 +109,10 @@ begin
     start_p : process
     begin
         start_i <= '1';
-        wait for 10 ns;
+        wait for 10 us;
 
         start_i <= '0';
-        wait for 50 ns;
+        wait for 1 ms;
 
     end process;
 

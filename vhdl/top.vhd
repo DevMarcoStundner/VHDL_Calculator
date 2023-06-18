@@ -93,63 +93,64 @@ architecture struct of TOP is
             );
     end component;
 
-    signal clk, reset                             : std_logic := '0';
-    signal dig0, dig1, dig2, dig3, ss             : std_logic_vector(7 downto 0);
-    signal led_i, sw, led, swsync                 : std_logic_vector(15 downto 0);
-    signal pb, pbsync, ss_sel                     : std_logic_vector(3 downto 0);
-    signal optyp                                  : std_logic_vector(3 downto 0);
-    signal op1, op2                               : std_logic_vector(11 downto 0);
-    signal finished, sign, overflow, error, start : std_logic := '0';
-    signal result                                 : std_logic_vector(15 downto 0);
+    -- io_ctrl
+    signal pbsync : std_logic_vector(3 downto 0);
+    signal led, swsync : std_logic_vector(15 downto 0);
+    signal dig0, dig1, dig2, dig3 : std_logic_vector(7 downto 0);
 
-
+    -- calc_ctrl
+    signal op1, op2 : std_logic_vector(11 downto 0);
+    signal optyp : std_logic_vector(3 downto 0);
+    signal result : std_logic_vector(15 downto 0);
+    signal start, finished, sign, overflow, error : std_logic;
+    
 begin
 
 
     i_io_ctrl : io_ctrl                     -- instantiate IO control unit
     port map(
-            clk_i    => clk,
-            reset_i  => reset,
-            dig0_i   => dig0,
-            dig1_i   => dig1,
-            dig2_i   => dig2,
-            dig3_i   => dig3,
-            ss_o     => ss_o,
-            led_i    => led_i,
-            sw_i     => sw_i,
-            ss_sel_o => ss_sel_o,
-            led_o    => led_o,
-            swsync_o => swsync,
-            pb_i     => pb_i,
-            pbsync_o => pbsync
+            clk_i      => clk_i,
+            reset_i    => reset_i,
+            dig0_i     => dig0,
+            dig1_i     => dig1,
+            dig2_i     => dig2,
+            dig3_i     => dig3,
+            led_i      => led,
+            sw_i       => sw_i,
+            pb_i       => pb_i,
+            ss_o       => ss_o,
+            ss_sel_o   => ss_sel_o,
+            led_o      => led_o,
+            swsync_o   => swsync,
+            pbsync_o   => pbsync           
             );
 
     i_calc_ctrl : calc_ctrl                 -- instantiate calculator control unit
     port map(
-            clk_i      => clk,
-            reset_i    => reset,
+            clk_i      => clk_i,
+            reset_i    => reset_i,
+            swsync_i   => swsync,
+            pbsync_i   => pbsync,
+            finished_i => finished,
+            result_i   => result,
+            sign_i     => sign,
+            overflow_i => overflow,
+            error_i    => error,
+            op1_o      => op1,
+            op2_o      => op2,
+            optyp_o    => optyp,
+            start_o    => start,
             dig0_o     => dig0,
             dig1_o     => dig1,
             dig2_o     => dig2,
             dig3_o     => dig3,
-            led_o      => led_o,
-            swsync_i   => swsync,
-            result_i   => result,
-            pbsync_i   => pbsync,
-            optyp_o    => optyp,
-            op1_o      => op1,
-            op2_o      => op2,
-            finished_i => finished,
-            sign_i     => sign,
-            overflow_i => overflow,
-            error_i    => error,
-            start_o    => start
+            led_o      => led 
             );
 
     i_alu : alu                             -- instantiate ALU
     port map(
-            clk_i      => clk,
-            reset_i    => reset,
+            clk_i      => clk_i,
+            reset_i    => reset_i,
             op1_i      => op1,
             op2_i      => op2,
             optyp_i    => optyp,
@@ -158,6 +159,6 @@ begin
             result_o   => result,
             sign_o     => sign,
             overflow_o => overflow,
-            error_o    => error
+            error_o    => error            
             );
 end struct;

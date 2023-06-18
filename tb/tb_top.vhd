@@ -18,8 +18,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity tb_alu is
-    end tb_alu;
+entity tb_top is
+end tb_top;
 
 architecture sim of tb_top is
 
@@ -38,7 +38,7 @@ architecture sim of tb_top is
     signal clk_i, reset_i : std_logic := '0'; 
     signal sw_i, led_o    : std_logic_vector(15 downto 0);
     signal pb_i, ss_sel_o : std_logic_vector(3 downto 0);
-    signal  ss_o          : std_logic_vector(7 downto 0);
+    signal ss_o           : std_logic_vector(7 downto 0);
     
 begin
 
@@ -56,15 +56,49 @@ begin
     CLK_p : process                     -- 100 Mhz
     begin
         clk_i <= '0';
-        wait for 5 ns;
+        wait for 5 us;
         clk_i <= '1';
-        wait for 5 ns;
+        wait for 5 us;
     end process;
     
     R_p : process
         begin
             reset_i <= '1';
-            wait for 15 ns;
+            wait for 15 us;
             reset_i <= '0';
             wait;
     end process;    
+
+    OP_p : process
+        begin
+            pb_i(0) <= '1';     --  BTNL
+            wait for 100 us;
+            pb_i(0) <= '0';
+            wait for 100 us;
+
+            sw_i(11 downto 0) <= "000000000110";
+            wait for 200 us;
+
+            pb_i(1) <= '1';     -- BTNC
+            wait for 100 us;
+            pb_i(1) <= '0';
+            wait for 100 us;
+
+
+            sw_i(11 downto 0) <= "000000000110";
+            wait for 200 us;
+
+            pb_i(2) <= '1';     -- BTNR
+            wait for 100 us;
+            pb_i(2) <= '0';
+            wait for 100 us;
+
+            sw_i(15 downto 12)  <= "0010";
+            wait for 200 us;
+
+            pb_i(3) <= '1';     -- BTND
+            wait for 100 us;
+            pb_i(3) <= '0';
+            wait for 100 us;
+    end process;
+end sim;

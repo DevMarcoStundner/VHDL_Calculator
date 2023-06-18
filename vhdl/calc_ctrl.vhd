@@ -50,53 +50,74 @@ end calc_ctrl;
 
 architecture rtl of calc_ctrl is 
 
-type calc_state is (OP1, OP2, OPTYPE, CALC, RESULT);
-signal s_states : calc_state;
+type calc_state is (OP1, OP2, OPTYPE, RESULT, RESTART);
+signal s_states      : calc_state;
 signal s_op1, s_op2  : std_logic_vector(11 downto 0);
-signal s_optyp    : std_logic_vector(3 downto 0);
+signal s_optyp       : std_logic_vector(3 downto 0);
+signal s_finished    : std_logic;
+signal s_result      : std_logic_vector(15 downto 0);
 
 begin
     p_fsm_calc : process (clk_i, reset_i)
     begin
-        if reset_i = '1' then   
-
-        led_o(15) <= '1';                                     -- LED 15 should be on
-        s_op1       <= (others => '0');                       -- OP1 and OP2 are zero and add shall be the type
-        s_op1       <= (others => '0');
-        s_optyp     <= (others => '0');
-        -- Calc muss auch durchgeführt werden 
-        if pbsync_i(BTNL) = '1' then
-            s_states <= OP1;
-        end if;
+        if reset_i = '1' then  
+            led_o(15)   <= '1';                                   -- LED 15 should be on
+            s_op1       <= (others => '0');                       -- OP1 and OP2 are zero and add shall be the type
+            s_op2       <= (others => '0');
+            s_optyp     <= (others => '0');
+            dig0_o      <= "00000011";
+            dig1_o      <= "00000011";
+            dig2_o      <= "00000011";
+            dig3_o      <= "00000011";
+            start_o <= '1';
+            s_states <= RESULT;
+            s_finished <= '0';
+            s_result <= (others => '0');
 
         elsif clk_i'event and clk_i = '1' then
+            if pbsync_i(BTNL) = '1' then
+                s_states <= OP1;
+            elsif pbsync_i(BTNC) = '1' then
+                s_states <= OP2;
+
+            elsif pbsync_i(BTNR) = '1' then
+                s_states <= OPTYPE;
+            end if;
+            
+
+            start_o <= '0';
+
             case s_states is
 
                 when OP1 =>      -- Displays changes of SW0-SW11
 
                     led_o <= (others => '0');
-                    dig3_o <= ss_symbols(21);                                                -- 1.
+                    dig3_o <= ss_symbols(21);                                                  -- 1.
                     dig0_o <= ss_symbols(to_integer(unsigned(swsync_i(3 downto 0))));          -- SW0-SW3
                     dig1_o <= ss_symbols(to_integer(unsigned(swsync_i(7 downto 4))));          -- SW4-SW7  
                     dig2_o <= ss_symbols(to_integer(unsigned(swsync_i(11 downto 8))));         -- SW8-SW11
 
                     s_op1 <= swsync_i(11 downto 0);
 
-                    if pbsync_i(BTNL) = '1' then
-                        s_states <= OP1;
-
-                    elsif pbsync_i(BTNC) = '1' then
+                    if pbsync_i(BTNC) = '1' then
                         s_states <= OP2;
 
                     elsif pbsync_i(BTNR) = '1' then
                         s_states <= OPTYPE;
 
-                    end if;
+                    elsif pbsync_i(BTND) = '1' then
+                        start_o <= '1';
+                        s_states <= RESULT;
+                    
+                    else
+                        s_states <= OP1;
+
+                    end if; 
 
                 when OP2 =>      -- Displays changes of SW0-SW11
 
                     led_o <= (others => '0');
-                    dig3_o <= ss_symbols(22);                                                -- 2.
+                    dig3_o <= ss_symbols(22);                                                  -- 2.
                     dig0_o <= ss_symbols(to_integer(unsigned(swsync_i(3 downto 0))));          -- SW0-SW3
                     dig1_o <= ss_symbols(to_integer(unsigned(swsync_i(7 downto 4))));          -- SW4-SW7  
                     dig2_o <= ss_symbols(to_integer(unsigned(swsync_i(11 downto 8))));         -- SW8-SW11
@@ -106,13 +127,17 @@ begin
                     if pbsync_i(BTNL) = '1' then
                         s_states <= OP1;
 
-                    elsif pbsync_i(BTNC) = '1' then
-                        s_states <= OP2;
-
                     elsif pbsync_i(BTNR) = '1' then
                         s_states <= OPTYPE;
 
-                    end if;
+                    elsif pbsync_i(BTND) = '1' then
+                        start_o <= '1';
+                        s_states <= RESULT;
+
+                    else 
+                        s_states <= OP2;
+
+                    end if; 
 
                 when OPTYPE =>                  -- Displays changes of SW12-SW15
 
@@ -154,58 +179,73 @@ begin
                     elsif pbsync_i(BTNC) = '1' then
                         s_states <= OP2;
 
-                    elsif pbsync_i(BTNR) = '1' then
-                        s_states <= OPTYPE;
-
                     elsif pbsync_i(BTND) = '1' then
                         start_o <= '1';
-                        s_states <= CALC;
-
+                        s_states <= RESULT;
+                    
+                    else
+                        s_states <= OPTYPE;
+    
                     end if; 
-
-                when CALC =>                    -- Calc should start if BNTD is pressed
-                    start_o    <= '0';
-                    op1_o      <= s_op1;
-                    op2_o      <= s_op2;
-                    optyp_o    <= s_optyp;
-                    s_states   <= RESULT;
 
                 when RESULT =>
 
-                    if finished_i = '1' then
+                    if s_finished = '1' then
+                        led_o(15)   <= '1'; 
 
-                        if error_i = '0' and overflow_i = '0' and sign_i = '0' then         -- Calc is valid
-                            dig3_o <= ss_symbols(to_integer(unsigned(result_i(15 downto 12))));
-                            dig2_o <= ss_symbols(to_integer(unsigned(result_i(11 downto 8))));
-                            dig1_o <= ss_symbols(to_integer(unsigned(result_i(7 downto 4))));
-                            dig0_o <= ss_symbols(to_integer(unsigned(result_i(3 downto 0))));
-                            
-                        elsif error_i = '0' and overflow_i = '0' and sign_i = '1' then      -- Calc is negativ
+                        if sign_i = '1' then                                                -- Calc is negativ
                             dig3_o <= ss_symbols(25);
                             dig2_o <= ss_symbols(to_integer(unsigned(result_i(11 downto 8))));
                             dig1_o <= ss_symbols(to_integer(unsigned(result_i(7 downto 4))));
                             dig0_o <= ss_symbols(to_integer(unsigned(result_i(3 downto 0))));
                             
-                        elsif error_i = '0' and overflow_i = '1' then                       -- Overflow
+                        elsif overflow_i = '1' then                                          -- Overflow
                             dig3_o <= ss_symbols(24);
                             dig2_o <= ss_symbols(24);
                             dig1_o <= ss_symbols(24);
                             dig0_o <= ss_symbols(24);
                             
-                        elsif error_i = '1' then                                            -- Calc error
+                        elsif error_i = '1' then                                              -- Calc error
                             dig3_o <= ss_symbols(14);
                             dig2_o <= ss_symbols(19);
                             dig1_o <= ss_symbols(19);
-                            dig0_o <= ss_symbols(23);         
+                            dig0_o <= ss_symbols(23); 
+                        
+                        else                                                                  -- Calc is valid
+                            dig3_o <= ss_symbols(to_integer(unsigned(result_i(15 downto 12))));
+                            dig2_o <= ss_symbols(to_integer(unsigned(result_i(11 downto 8))));
+                            dig1_o <= ss_symbols(to_integer(unsigned(result_i(7 downto 4))));
+                            dig0_o <= ss_symbols(to_integer(unsigned(result_i(3 downto 0))));
 
                         end if ;
+                        if pbsync_i(BTNL) = '1' then
+                            s_states <= RESTART;
+                        end if;
+                    end if;
 
-                    end if;
-                    if pbsync_i(BTNL) = '1' then
-                        s_states <= OP1;
-                    end if;
+                when RESTART =>
+
+                    s_states <= OP1;
+                    s_op1       <= (others => '0');                       
+                    s_op1       <= (others => '0');
+                    s_optyp     <= (others => '0');
+                    dig0_o      <= "00000011";
+                    dig1_o      <= "00000011";
+                    dig2_o      <= "00000011";
+                    dig3_o      <= "00000011";
+                    start_o <= '0';
+                    s_finished <= '0';
+                    s_result <= (others => '0');
+
             end case;
+            s_finished <= finished_i;
+            s_result   <= result_i;
+
+
         end if;
     end process;
+    op1_o      <= s_op1;
+    op2_o      <= s_op2;
+    optyp_o    <= s_optyp;
 
 end rtl;
